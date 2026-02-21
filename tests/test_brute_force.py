@@ -17,7 +17,7 @@ def test_detect_brute_force_attempts():
 
     assert len(alerts) == 1
     assert alerts[0]['type'] == 'Brute Force Attack'
-    assert alerts[0]['severity'] == '85'
+    assert alerts[0]['severity'] == 85
 
 def test_no_brute_force_if_spread_out():
     base_time = datetime.now()

@@ -12,5 +12,5 @@ def test_suspicious_path_detected():
     alerts = detect_suspicious_paths(logs)
 
     assert len(alerts) == 1
-    assert alerts[0]['severity'] == '60'
+    assert alerts[0]['severity'] == 60
     

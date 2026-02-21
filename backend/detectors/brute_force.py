@@ -1,4 +1,4 @@
-from collection import defaultdict
+from collections import defaultdict
 from datetime import timedelta
 
 def detect_brute_force_attempts(logs):
@@ -17,8 +17,8 @@ def detect_brute_force_attempts(logs):
                 alerts.append({
                     'ip_address': ip_address,
                     'type': 'Brute Force Attack',
-                    'severity': '85',
-                    'description': f'Multiple failed login attempts detected from IP {ip_address} within a short time frame.'
+                    'severity': 85,
+                    'details': f'Multiple failed login attempts detected from IP {ip_address} within a short time frame.'
                 })
                 break
     
