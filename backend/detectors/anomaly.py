@@ -1,15 +1,27 @@
-def detect_abnormal_time(logs):
+from typing import Dict, List
+
+
+def detect_abnormal_time(logs: List[Dict], config: Dict) -> List[Dict]:
+    detector_cfg = config["detectors"]["abnormal_access_time"]
+
+    if not detector_cfg.get("enabled", True):
+        return []
+
+    start_hour = detector_cfg["start_hour"]
+    end_hour = detector_cfg["end_hour"]
+    severity = detector_cfg["severity"]
+
     alerts = []
 
     for log in logs:
         hour = log["timestamp"].hour
 
-        if hour >= 2 and hour <= 4:
+        if start_hour <= hour <= end_hour:
             alerts.append({
                 "ip_address": log["ip_address"],
                 "type": "Abnormal Access Time",
-                "severity": 25,
-                "details": "Access at unusual time: {}:00".format(hour)
+                "severity": severity,
+                "details": f"Access at unusual time: {hour}:00"
             })
 
     return alerts
