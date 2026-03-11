@@ -1,0 +1,31 @@
+app:
+  debug: true
+
+database:
+  url: "sqlite:///./threatlens.db"
+
+stream:
+  poll_interval_seconds: 1
+  dedup_buffer_size: 1000
+
+detectors:
+  suspicious_paths:
+    enabled: true
+    paths:
+      /admin: 60
+      /wp-admin: 70
+      /etc/passwd: 90
+
+  brute_force:
+    enabled: true
+    endpoint: "/login"
+    failed_status_code: 401
+    attempts: 5
+    window_seconds: 60
+    severity: 85
+
+  abnormal_access_time:
+    enabled: true
+    start_hour: 0
+    end_hour: 5
+    severity: 25

@@ -2,7 +2,7 @@ import json
 import time
 from collections import deque
 from pathlib import Path
-from typing import Deque
+from typing import Deque, List
 
 from sqlalchemy.orm import sessionmaker
 
@@ -44,30 +44,53 @@ class LogStreamProcessor:
             print(f"[ThreatLens] Watching {self.file_path} from byte {start_position}")
 
             while self._running:
-                line = f.readline()
+                lines: List[str] = []
+                last_offset = f.tell()
 
-                if not line:
+                while True:
+                    line = f.readline()
+                    if not line:
+                        break
+
+                    lines.append(line.rstrip("\n"))
+                    last_offset = f.tell()
+
+                if not lines:
                     time.sleep(self.poll_interval)
                     continue
 
-                self.process_line(line.rstrip("\n"))
-                self._save_checkpoint(f.tell())
+                self.process_lines(lines)
+                self._save_checkpoint(last_offset)
 
     def stop(self) -> None:
         self._running = False
 
     def process_line(self, line: str) -> None:
-        if not line.strip():
+        """
+        Keeps compatibility with existing tests.
+        """
+        self.process_lines([line])
+
+    def process_lines(self, lines: List[str]) -> None:
+        parsed_events = []
+
+        for line in lines:
+            if not line.strip():
+                continue
+
+            parsed = parse_line(line)
+            if parsed is None:
+                continue
+
+            parsed_events.append(parsed)
+
+        if not parsed_events:
             return
 
-        parsed = parse_line(line)
-        if parsed is None:
-            return
-
-        self.event_buffer.append(parsed)
+        for event in parsed_events:
+            self.event_buffer.append(event)
 
         alerts = run_detectors(list(self.event_buffer))
-
         if not alerts:
             return
 
@@ -92,7 +115,8 @@ class LogStreamProcessor:
             db.commit()
             print(
                 f"[ThreatLens] Saved {len(new_alerts)} new alert(s) "
-                f"(buffer size: {len(self.event_buffer)}) from line: {line}"
+                f"from {len(parsed_events)} parsed line(s) "
+                f"(buffer size: {len(self.event_buffer)})"
             )
         except Exception:
             db.rollback()
@@ -133,5 +157,6 @@ class LogStreamProcessor:
             "file_path": str(self.file_path),
             "offset": offset,
         }
+
         with self.checkpoint_path.open("w", encoding="utf-8") as f:
             json.dump(payload, f)
